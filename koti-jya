@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+
+import sys
+from mpmath import *
+
+
+def factorial(n):
+    if n == 0:
+        return 1
+    else:
+        return n*factorial(n - 1)
+
+
+def thread(i, num_threads, num_iterations, term, x):
+    n = num_threads*num_iterations + i
+    term[int(i)] = (-1)**n/factorial(2*n)*x**(2*n)
+    return
+
+
+def main():
+    num_iterations = mpf(0)
+    cosine = mpf(0)
+    mp.dps = 100000 # Setting precision (number of decimal places)
+    num_threads = mpf(sys.argv[1])
+    term = []
+    for i in arange(num_threads): term.append(i)
+    stop_condition = sys.argv[2]
+    precision = 100**(-1*mpf(sys.argv[3]))
+    x = mpf(sys.argv[4]) #TODO: convert
+    try:
+        option = sys.argv[5]
+    except:
+        option = None
+
+    while True: # while stop condition not satisfied
+        for i in arange(num_threads):
+            thread(i, num_threads, num_iterations, term, x)
+            cosine += term[int(i)]
+            if stop_condition == "f":
+                if fabs(term[int(i) - 1] - term[int(i)]) < precision:
+                    print("Number of rounds: " + str(num_iterations))
+                    print("cos(" + x + ") = " + str(cosine))
+                    return
+            elif stop_condition == "m":
+                if fabs(term[int(i)]) < precision:
+                    print("Number of rounds: " + str(num_iterations))
+                    print("cos(" + str(x) + ") = " + str(cosine))
+                    return
+        num_iterations += 1
+
+
+if __name__ == '__main__':
+    main()
