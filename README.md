@@ -14,4 +14,5 @@ We still believe we shall pass =)
 ## koti-jyā ?
 For more info about the word koti-jyā, see  
 http://en.wikipedia.org/wiki/Jy%C4%81,_koti-jy%C4%81_and_utkrama-jy%C4%81  
-http://en.wikipedia.org/wiki/History_of_trigonometry
+http://en.wikipedia.org/wiki/History_of_trigonometry  
+https://linux.ime.usp.br/~bedulli/Datta-Singh_hindu-trigonometry-1983.pdf  
