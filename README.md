@@ -5,7 +5,7 @@ mpmath python 3 library - http://mpmath.org (package python3-mpmath in Ubuntu)
 
 ## How to run
 Just run script koti-jya in the shell:  
-$ ./koti-jya Usage: ./koti-jya num_threads|0 f|m precision x [d|s]
+$ ./koti-jya num_threads|0 f|m precision x [d|s]
 
 
 ## License
