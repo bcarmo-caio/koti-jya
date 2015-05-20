@@ -4,49 +4,64 @@ import sys
 from mpmath import *
 
 
-def factorial(n):
+def fat(n):
     if n == 0:
         return 1
     else:
-        return n*factorial(n - 1)
+        return n*fat(n - 1)
 
 
 def thread(i, num_threads, num_iterations, term, x):
     n = num_threads*num_iterations + i
-    term[int(i)] = (-1)**n/factorial(2*n)*x**(2*n)
+    term[i] = (-1)**n/factorial(2*n)*x**(2*n) #TODO must check mpmath.factorial implementation
     return
 
 
 def main():
+    # Setting precision (number of decimal places)
+    mp.dps = 100 #TODO change to 100000
+
+    # Initialization
+    if len(sys.argv) < 5:
+        print("Usage: " + sys.argv[0] + " num_threads f|m precision x [d|s]")
+        exit(1)
     num_iterations = mpf(0)
     cosine = mpf(0)
-    mp.dps = 100000 # Setting precision (number of decimal places)
-    num_threads = mpf(sys.argv[1])
-    term = []
-    for i in arange(num_threads): term.append(i)
+    num_threads = int(sys.argv[1])
+    term = [0] * num_threads
     stop_condition = sys.argv[2]
     precision = 100**(-1*mpf(sys.argv[3]))
-    x = mpf(sys.argv[4]) #TODO: convert
+    x = mpf(sys.argv[4])
     try:
         option = sys.argv[5]
     except:
         option = None
 
     while True: # while stop condition not satisfied
-        for i in arange(num_threads):
+        for i in range(num_threads):
             thread(i, num_threads, num_iterations, term, x)
-            cosine += term[int(i)]
-            if stop_condition == "f":
-                if fabs(term[int(i) - 1] - term[int(i)]) < precision:
-                    print("Number of rounds: " + str(num_iterations))
-                    print("cos(" + x + ") = " + str(cosine))
+        #TODO barrier here
+        num_iterations += 1
+        for i in range(num_threads):
+            cosine += term[i]
+            if option == "s":
+                print("Partial value for cos(" + str(x) + ") in iteration " + str(int(num_iterations)) + ": " + str(cosine))
+            if stop_condition == "f": #TODO is this valid for 1 thread?
+                if fabs(term[i - 1] - term[i]) < precision:
+                    print_exit(x, cosine, num_iterations, option)
                     return
             elif stop_condition == "m":
-                if fabs(term[int(i)]) < precision:
-                    print("Number of rounds: " + str(num_iterations))
-                    print("cos(" + str(x) + ") = " + str(cosine))
+                if fabs(term[i]) < precision:
+                    print_exit(x, cosine, num_iterations, option)
                     return
-        num_iterations += 1
+
+
+def print_exit(x, cosine, num_iterations, option):
+    if option == "s":
+        print("\nNumber of terms calculated: " + str(int(num_iterations)))
+    else:
+        print("Number of rounds: " + str(int(num_iterations)))
+    print("cos(" + str(x) + ") = " + str(cosine))
 
 
 if __name__ == '__main__':
