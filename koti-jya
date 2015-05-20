@@ -12,21 +12,22 @@ def fat(n):
         return n*fat(n - 1)
 
 
-def sequential(i, num_threads, num_iterations, term, x):
+def calculate_next_taylor_term(i):
     n = num_threads*num_iterations + i
     term[i] = (-1)**n/mpmath.factorial(2*n)*x**(2*n) #TODO must check mpmath.factorial implementation
-    return
 
 
-def thread(i, num_threads, num_iterations, term, x):
+def thread(i):
     while True:
-        n = num_threads*num_iterations + i
-        term[i] = (-1)**n/mpmath.factorial(2*n)*x**(2*n) #TODO must check mpmath.factorial implementation
+        calculate_next_taylor_term(i)
         barrier1.wait()
         barrier2.wait()
+        if kill_threads: return
 
 
 def main():
+    global num_threads, num_iterations, term, x, cosine, option, barrier1, barrier2, kill_threads
+
     # Setting precision (number of decimal places)
     mpmath.mp.dps = 100 #TODO change to 100000
 
@@ -36,8 +37,6 @@ def main():
         exit(1)
     num_iterations = mpmath.mpf(0)
     cosine = mpmath.mpf(0)
-    num_threads = int(sys.argv[1])
-    term = [0] * num_threads
     stop_condition = sys.argv[2]
     precision = 100**(-1*mpmath.mpf(sys.argv[3]))
     x = mpmath.mpf(sys.argv[4])
@@ -45,37 +44,47 @@ def main():
         option = sys.argv[5]
     except:
         option = None
-    global barrier1, barrier2
-    barrier1 = threading.Barrier(num_threads + 1)
-    barrier2 = threading.Barrier(num_threads + 1)
+    if option == "s":
+        parallel = False
+        num_threads = 1
+    else:
+        parallel = True
+        num_threads = int(sys.argv[1])
+    term = [0] * num_threads
+    if parallel:
+        barrier1 = threading.Barrier(num_threads + 1)
+        barrier2 = threading.Barrier(num_threads + 1)
+        kill_threads = False
 
-    while True: # while stop condition not satisfied
+    if parallel:
+        threads = []
         for i in range(num_threads):
-            sequential(i, num_threads, num_iterations, term, x)
-        #barrier1.wait()
-        #TODO barrier here
+            t = threading.Thread(target=thread, args=(i,))
+            threads.append(t)
+            t.start()
+    while True:
+        if parallel:
+            barrier1.wait()
+        else:
+            calculate_next_taylor_term(0)
         num_iterations += 1
         for i in range(num_threads):
             cosine += term[i]
             if option == "s":
                 print("Partial value for cos(" + str(x) + ") in iteration " + str(int(num_iterations)) + ": " + str(cosine))
-            if stop_condition == "f": #TODO is this valid for 1 thread?
-                if mpmath.fabs(term[i - 1] - term[i]) < precision:
-                    print_exit(x, cosine, num_iterations, option)
-                    return
-            elif stop_condition == "m":
-                if mpmath.fabs(term[i]) < precision:
-                    print_exit(x, cosine, num_iterations, option)
-                    return
-        #barrier2.wait()
-
-
-def print_exit(x, cosine, num_iterations, option):
-    if option == "s":
-        print("\nNumber of terms calculated: " + str(int(num_iterations)))
-    else:
-        print("Number of rounds: " + str(int(num_iterations)))
-    print("cos(" + str(x) + ") = " + str(cosine))
+            # If stop condition is reached print result and terminate
+            if (stop_condition == "f" and mpmath.fabs(term[i - 1] - term[i]) < precision) or (stop_condition == "m" and mpmath.fabs(term[i]) < precision):
+                if option == "s":
+                    print("\nNumber of terms calculated: ", end='')
+                else:
+                    print("Number of rounds: ", end='')
+                print(str(int(num_iterations)))
+                print("cos(" + str(x) + ") = " + str(cosine))
+                if parallel:
+                    kill_threads = True
+                    barrier2.wait()
+                return
+        if parallel: barrier2.wait()
 
 
 if __name__ == '__main__':
