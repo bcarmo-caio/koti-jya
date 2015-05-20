@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 import sys
-from mpmath import *
+import threading
+import mpmath
 
 
 def fat(n):
@@ -11,35 +12,47 @@ def fat(n):
         return n*fat(n - 1)
 
 
-def thread(i, num_threads, num_iterations, term, x):
+def sequential(i, num_threads, num_iterations, term, x):
     n = num_threads*num_iterations + i
-    term[i] = (-1)**n/factorial(2*n)*x**(2*n) #TODO must check mpmath.factorial implementation
+    term[i] = (-1)**n/mpmath.factorial(2*n)*x**(2*n) #TODO must check mpmath.factorial implementation
     return
+
+
+def thread(i, num_threads, num_iterations, term, x):
+    while True:
+        n = num_threads*num_iterations + i
+        term[i] = (-1)**n/mpmath.factorial(2*n)*x**(2*n) #TODO must check mpmath.factorial implementation
+        barrier1.wait()
+        barrier2.wait()
 
 
 def main():
     # Setting precision (number of decimal places)
-    mp.dps = 100 #TODO change to 100000
+    mpmath.mp.dps = 100 #TODO change to 100000
 
     # Initialization
     if len(sys.argv) < 5:
         print("Usage: " + sys.argv[0] + " num_threads f|m precision x [d|s]")
         exit(1)
-    num_iterations = mpf(0)
-    cosine = mpf(0)
+    num_iterations = mpmath.mpf(0)
+    cosine = mpmath.mpf(0)
     num_threads = int(sys.argv[1])
     term = [0] * num_threads
     stop_condition = sys.argv[2]
-    precision = 100**(-1*mpf(sys.argv[3]))
-    x = mpf(sys.argv[4])
+    precision = 100**(-1*mpmath.mpf(sys.argv[3]))
+    x = mpmath.mpf(sys.argv[4])
     try:
         option = sys.argv[5]
     except:
         option = None
+    global barrier1, barrier2
+    barrier1 = threading.Barrier(num_threads + 1)
+    barrier2 = threading.Barrier(num_threads + 1)
 
     while True: # while stop condition not satisfied
         for i in range(num_threads):
-            thread(i, num_threads, num_iterations, term, x)
+            sequential(i, num_threads, num_iterations, term, x)
+        #barrier1.wait()
         #TODO barrier here
         num_iterations += 1
         for i in range(num_threads):
@@ -47,13 +60,14 @@ def main():
             if option == "s":
                 print("Partial value for cos(" + str(x) + ") in iteration " + str(int(num_iterations)) + ": " + str(cosine))
             if stop_condition == "f": #TODO is this valid for 1 thread?
-                if fabs(term[i - 1] - term[i]) < precision:
+                if mpmath.fabs(term[i - 1] - term[i]) < precision:
                     print_exit(x, cosine, num_iterations, option)
                     return
             elif stop_condition == "m":
-                if fabs(term[i]) < precision:
+                if mpmath.fabs(term[i]) < precision:
                     print_exit(x, cosine, num_iterations, option)
                     return
+        #barrier2.wait()
 
 
 def print_exit(x, cosine, num_iterations, option):
