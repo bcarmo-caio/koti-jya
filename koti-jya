@@ -50,8 +50,7 @@ def main():
         debug = True
     else:
         parallel = True
-        num_threads = int(sys.argv[1])
-        if num_threads == 0: num_threads = multiprocessing.cpu_count()
+        num_threads = int(sys.argv[1]) or multiprocessing.cpu_count()
         if option == "d": debug = True
         else: debug = False
     term = [0] * num_threads
@@ -78,8 +77,9 @@ def main():
                 print("Partial value for cos(" + str(x) + ") in iteration " + str(int(num_iterations)) + ": " + str(cosine))
             # If stop condition is reached print result and terminate
             if (stop_condition == "f" and mpmath.fabs(term[i - 1] - term[i]) < precision) or (stop_condition == "m" and mpmath.fabs(term[i]) < precision):
+                if debug: print()
                 if option == "s":
-                    print("\nNumber of terms calculated: ", end='')
+                    print("Number of terms calculated: ", end='')
                 else:
                     print("Number of rounds: ", end='')
                 print(str(int(num_iterations)))
