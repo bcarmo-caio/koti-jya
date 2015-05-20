@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 
+#TODO fix program when stop_condition = f and num_threads = 1
+#TODO fix f mode, the difference should be between the cosine from last iteration and current cosine, not between terms
+#TODO add support for option = "d"
+#TODO Compile?
+#TODO Report...
+
 import sys
 import threading
+import multiprocessing
 import mpmath
-
-
-def fat(n):
-    if n == 0:
-        return 1
-    else:
-        return n*fat(n - 1)
 
 
 def calculate_next_taylor_term(i):
@@ -38,7 +38,7 @@ def main():
     num_iterations = mpmath.mpf(0)
     cosine = mpmath.mpf(0)
     stop_condition = sys.argv[2]
-    precision = 100**(-1*mpmath.mpf(sys.argv[3]))
+    precision = 10**(-1*mpmath.mpf(sys.argv[3]))
     x = mpmath.mpf(sys.argv[4])
     try:
         option = sys.argv[5]
@@ -47,9 +47,13 @@ def main():
     if option == "s":
         parallel = False
         num_threads = 1
+        debug = True
     else:
         parallel = True
         num_threads = int(sys.argv[1])
+        if num_threads == 0: num_threads = multiprocessing.cpu_count()
+        if option == "d": debug = True
+        else: debug = False
     term = [0] * num_threads
     if parallel:
         barrier1 = threading.Barrier(num_threads + 1)
@@ -70,7 +74,7 @@ def main():
         num_iterations += 1
         for i in range(num_threads):
             cosine += term[i]
-            if option == "s":
+            if debug:
                 print("Partial value for cos(" + str(x) + ") in iteration " + str(int(num_iterations)) + ": " + str(cosine))
             # If stop condition is reached print result and terminate
             if (stop_condition == "f" and mpmath.fabs(term[i - 1] - term[i]) < precision) or (stop_condition == "m" and mpmath.fabs(term[i]) < precision):
