@@ -3,7 +3,7 @@
 import sys
 import threading
 import mpmath
-
+import multiprocessing
 
 def fat(n):
     if n == 0:
@@ -49,7 +49,7 @@ def main():
         num_threads = 1
     else:
         parallel = True
-        num_threads = int(sys.argv[1])
+        num_threads = int(sys.argv[1]) or multiprocessing.cpu_count()
     term = [0] * num_threads
     if parallel:
         barrier1 = threading.Barrier(num_threads + 1)
