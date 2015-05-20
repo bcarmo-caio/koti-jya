@@ -24,7 +24,7 @@ def main():
     global num_threads, num_iterations, term, x, cosine, option, debug, parallel, barrier1, barrier2, kill_threads # Sorry
 
     # Setting precision (number of decimal places)
-    mpmath.mp.dps = 100000
+    mpmath.mp.dps = int(sys.argv[3])
 
     # Initialization
     if len(sys.argv) < 5:
@@ -35,15 +35,13 @@ def main():
     cosine = mpmath.mpf(0)
     stop_condition = sys.argv[2]
     precision = 10**(-1*mpmath.mpf(sys.argv[3]))
-#    x = mpmath.mpf(sys.argv[4])
     if sys.argv[4][0] == 'p':
         if sys.argv[4][1] != 'i' or sys.argv[4][2] != '/' or sys.argv[4][3] == '0':
-            print("To use pi / n as input, write pi/n where n is an integer != 0")
+            print("To use pi/n as input, write pi/n where n is an integer != 0")
             print("To input pi, just write pi/1")
             print("Usage: " + sys.argv[0] + " num_threads f|m precision x [d|s]")
             exit(1)
-        print("pi / " + str(sys.argv[4][3]))
-        x = mpmath.mpf(mpmath.mp.pi / mpmath.mpf(sys.argv[4][3]))
+        x = mpmath.pi/mpmath.mpf(sys.argv[4][3])
     else:
         x = mpmath.mpf(sys.argv[4])
     try:
