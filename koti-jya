@@ -37,7 +37,7 @@ def main():
     precision = 10**(-1*mpmath.mpf(sys.argv[3]))
     if sys.argv[4][0] == 'p':
         if sys.argv[4][1] != 'i' or sys.argv[4][2] != '/' or sys.argv[4][3] == '0':
-            print("To use pi/n as input, write pi/n where n is an integer != 0")
+            print("To use pi/n as input, write pi/n, where n is an integer > 0")
             print("To input pi, just write pi/1")
             print("Usage: " + sys.argv[0] + " num_threads f|m precision x [d|s]")
             exit(1)
