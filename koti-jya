@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
 
-#TODO fix program when stop_condition = f and num_threads = 1
-#TODO fix f mode, the difference should be between the cosine from last iteration and current cosine, not between terms
-#TODO debug, thread order printing is correct?
-#TODO Compile?
-#TODO Report...
-
 import sys
 import threading
 import multiprocessing
 import mpmath
+
 
 def calculate_next_taylor_term(i):
     n = num_threads*num_iterations + i
@@ -26,16 +21,17 @@ def thread(i):
 
 
 def main():
-    global num_threads, num_iterations, term, x, cosine, option, debug, barrier1, barrier2, kill_threads
+    global num_threads, num_iterations, term, x, cosine, option, debug, parallel, barrier1, barrier2, kill_threads # Sorry
 
     # Setting precision (number of decimal places)
-    mpmath.mp.dps = 100 #TODO change to 100000
+    mpmath.mp.dps = 100000
 
     # Initialization
     if len(sys.argv) < 5:
         print("Usage: " + sys.argv[0] + " num_threads f|m precision x [d|s]")
         exit(1)
     num_iterations = mpmath.mpf(0)
+    old_cosine = mpmath.mpf(0)
     cosine = mpmath.mpf(0)
     stop_condition = sys.argv[2]
     precision = 10**(-1*mpmath.mpf(sys.argv[3]))
@@ -73,21 +69,24 @@ def main():
         num_iterations += 1
         for i in range(num_threads):
             cosine += term[i]
-            # If stop condition is reached print result and terminate
-            if (stop_condition == "f" and mpmath.fabs(term[i - 1] - term[i]) < precision) or (stop_condition == "m" and mpmath.fabs(term[i]) < precision):
+            if stop_condition == "m" and mpmath.fabs(term[i]) < precision:
                 if debug: print()
-                if option == "s":
-                    print("Number of terms calculated: ", end='')
-                else:
-                    print("Number of rounds: ", end='')
-                print(str(int(num_iterations)))
+                print("Number of iterations: " + str(int(num_iterations)))
                 print("cos(" + str(x) + ") = " + str(cosine))
                 if parallel:
                     kill_threads = True
                     barrier2.wait()
                 return
-        if debug:
-            print("Partial value for cos(" + str(x) + ") in iteration " + str(int(num_iterations)) + ": " + str(cosine))
+        if stop_condition == "f" and mpmath.fabs(cosine - old_cosine) < precision:
+            if debug: print()
+            print("Number of iterations: " + str(int(num_iterations)))
+            print("cos(" + str(x) + ") = " + str(cosine))
+            if parallel:
+                kill_threads = True
+                barrier2.wait()
+            return
+        old_cosine = cosine
+        if debug: print("Partial value for cos(" + str(x) + ") in iteration " + str(int(num_iterations)) + ": " + str(cosine))
         if parallel: barrier2.wait()
 
 
