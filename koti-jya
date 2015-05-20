@@ -8,7 +8,7 @@ import mpmath
 
 def calculate_next_taylor_term(i):
     n = num_threads*num_iterations + i
-    term[i] = (-1)**n/mpmath.factorial(2*n)*x**(2*n) #TODO must check mpmath.factorial implementation
+    term[i] = (-1)**n/mpmath.factorial(2*n)*x**(2*n)
 
 
 def thread(i):
@@ -23,13 +23,12 @@ def thread(i):
 def main():
     global num_threads, num_iterations, term, x, cosine, option, debug, parallel, barrier1, barrier2, kill_threads # Sorry
 
-    # Setting precision (number of decimal places)
-    mpmath.mp.dps = int(sys.argv[3])
 
     # Initialization
     if len(sys.argv) < 5:
-        print("Usage: " + sys.argv[0] + " num_threads f|m precision x [d|s]")
+        print("Usage: " + sys.argv[0] + " num_threads|0 f|m precision x [d|s]")
         exit(1)
+    mpmath.mp.dps = int(sys.argv[3]) # Setting precision (number of decimal places)
     num_iterations = mpmath.mpf(0)
     old_cosine = mpmath.mpf(0)
     cosine = mpmath.mpf(0)
@@ -39,7 +38,7 @@ def main():
         if sys.argv[4][1] != 'i' or sys.argv[4][2] != '/' or sys.argv[4][3] == '0':
             print("To use pi/n as input, write pi/n where n is an integer != 0")
             print("To input pi, just write pi/1")
-            print("Usage: " + sys.argv[0] + " num_threads f|m precision x [d|s]")
+            print("Usage: " + sys.argv[0] + " num_threads|0 f|m precision x [d|s]")
             exit(1)
         x = mpmath.pi/mpmath.mpf(sys.argv[4][3])
     else:
