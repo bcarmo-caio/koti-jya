@@ -2,7 +2,7 @@
 
 #TODO fix program when stop_condition = f and num_threads = 1
 #TODO fix f mode, the difference should be between the cosine from last iteration and current cosine, not between terms
-#TODO add support for option = "d"
+#TODO debug, thread order printing is correct?
 #TODO Compile?
 #TODO Report...
 
@@ -20,13 +20,14 @@ def calculate_next_taylor_term(i):
 def thread(i):
     while True:
         calculate_next_taylor_term(i)
+        if debug: print("Thread " + str(i) + " arrived at the barrier")
         barrier1.wait()
         barrier2.wait()
         if kill_threads: return
 
 
 def main():
-    global num_threads, num_iterations, term, x, cosine, option, barrier1, barrier2, kill_threads
+    global num_threads, num_iterations, term, x, cosine, option, debug, barrier1, barrier2, kill_threads
 
     # Setting precision (number of decimal places)
     mpmath.mp.dps = 100 #TODO change to 100000
@@ -73,8 +74,6 @@ def main():
         num_iterations += 1
         for i in range(num_threads):
             cosine += term[i]
-            if debug:
-                print("Partial value for cos(" + str(x) + ") in iteration " + str(int(num_iterations)) + ": " + str(cosine))
             # If stop condition is reached print result and terminate
             if (stop_condition == "f" and mpmath.fabs(term[i - 1] - term[i]) < precision) or (stop_condition == "m" and mpmath.fabs(term[i]) < precision):
                 if debug: print()
@@ -88,6 +87,8 @@ def main():
                     kill_threads = True
                     barrier2.wait()
                 return
+        if debug:
+            print("Partial value for cos(" + str(x) + ") in iteration " + str(int(num_iterations)) + ": " + str(cosine))
         if parallel: barrier2.wait()
 
 
