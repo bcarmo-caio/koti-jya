@@ -5,11 +5,72 @@ import threading
 import multiprocessing
 import mpmath
 
+#no pre calculated factorial function
+factorial_table = []
+def factorial(n):
+    _n = round(n)
+    result = mpmath.mpf(0.0)
+
+    if _n == 0:
+        if len(factorial_table) == 0:
+            factorial_table.append(mpmath.mpf(1.0))
+            return mpmath.mpf(1.0)
+        else:
+            return mpmath.mpf(1.0)
+
+
+    if _n < len(factorial_table):
+        if factorial_table[_n] > 0.0:
+            #we have it calculated
+            return factorial_table[_n]
+
+    #we do not have it calculated =/
+    result = n * mpmath.mpf(factorial(n - 1))
+    old_len = len(factorial_table)
+    for i in range(old_len, _n + 1):
+        factorial_table.append(mpmath.mpf(0.0))
+    factorial_table[_n] = result
+    return result
+
+#no pre calculated power function
+power_table = [mpmath.mpf(1.0)]
+def power(a, b):
+    _a = round(a)
+    _b = round(b)
+    if _a == -1:
+        if _b % 2 == 0:
+            return mpmath.mpf(1.0)
+        else:
+            return mpmath.mpf(-1.0)
+
+    if _b == 1:
+        if len(power_table) == 1:
+            power_table.append(mpmath.mpf(a))
+        return power_table[1]
+
+    if _b < len(power_table):
+        if power_table[_b] > mpmath.mpf(0.0):
+            #we have it calculated
+            return power_table[_b]
+
+    #we do not have it calculated
+    result = mpmath.mpf(a) * power(a, _b -1)
+    old_len = len(power_table)
+    for i in range(old_len, _b + 1):
+        power_table.append(mpmath.mpf(0.0))
+    power_table[_b] = result
+    return result
 
 def calculate_next_taylor_term(i):
     n = num_threads*num_iterations + i
-    term[i] = (-1)**n/mpmath.factorial(2*n)*x**(2*n)
 
+    #method below uses no factorial nor power functions but the ones we have
+    #written ourselves.
+    term[i] = (power(-1,n)/factorial(2*n))*power(x,(2*n))
+
+    #method below uses power and factorial implemented in mpmath.
+    #both have same ouput considering given precision.
+    #term[i] = (-1)**n/mpmath.factorial(2*n)*x**(2*n)
 
 def thread(i):
     while True:
@@ -21,24 +82,41 @@ def thread(i):
 
 
 def main():
-    global num_threads, num_iterations, term, x, cosine, option, debug, parallel, barrier1, barrier2, kill_threads # Sorry
-
+    global num_threads, num_iterations, term, x, cosine, option, debug, parallel
+    global barrier1, barrier2, kill_threads # Sorry
 
     # Initialization
     if len(sys.argv) < 5:
         print("Usage: " + sys.argv[0] + " num_threads|0 f|m precision x [d|s]")
         exit(1)
-    mpmath.mp.dps = int(sys.argv[3]) # Setting precision (number of decimal places)
+    # Setting precision (number of decimal places)
+    mpmath.mp.dps = int(sys.argv[3])
     num_iterations = mpmath.mpf(0)
     old_cosine = mpmath.mpf(0)
     cosine = mpmath.mpf(0)
     stop_condition = sys.argv[2]
     precision = 10**(-1*mpmath.mpf(sys.argv[3]))
     if sys.argv[4][0] == 'p':
-        if sys.argv[4][1] != 'i' or sys.argv[4][2] != '/' or sys.argv[4][3] == '0':
+        #exit on try does not really exits.
+        warned = False
+        try:
+            if sys.argv[4][1] != 'i' or \
+               sys.argv[4][2] != '/' or \
+               sys.argv[4][3] == '0':
+                print("To use pi/n as input, write pi/n, where n is "\
+                      "an integer > 0")
+                print("If you want pi, just write pi/1")
+                print("Usage: " + sys.argv[0] + " num_threads|0 f|m precision "\
+                      "x [d|s]")
+                warned = True
+                exit(1)
+        except:
+            if warned == True:
+                exit(1)
             print("To use pi/n as input, write pi/n, where n is an integer > 0")
-            print("To input pi, just write pi/1")
-            print("Usage: " + sys.argv[0] + " num_threads|0 f|m precision x [d|s]")
+            print("If you want pi, just write pi/1")
+            print("Usage: " + sys.argv[0] + " num_threads|0 f|m precision x "\
+                  "[d|s]")
             exit(1)
         x = mpmath.pi/mpmath.mpf(sys.argv[4][3])
     else:
@@ -84,7 +162,8 @@ def main():
                     kill_threads = True
                     barrier2.wait()
                 return
-        if stop_condition == "f" and mpmath.fabs(cosine - old_cosine) < precision:
+        if stop_condition == "f" and \
+           mpmath.fabs(cosine - old_cosine) < precision:
             if debug: print()
             print("Number of iterations: " + str(int(num_iterations)))
             print("cos(" + str(x) + ") = " + str(cosine))
@@ -93,7 +172,8 @@ def main():
                 barrier2.wait()
             return
         old_cosine = cosine
-        if debug: print("Partial value for cos(" + str(x) + ") in iteration " + str(int(num_iterations)) + ": " + str(cosine))
+        if debug: print("Partial value for cos(" + str(x) + ") in iteration " +\
+                        str(int(num_iterations)) + ": " + str(cosine))
         if parallel: barrier2.wait()
 
 
